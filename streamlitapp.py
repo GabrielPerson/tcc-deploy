@@ -277,10 +277,10 @@ with row3_2:
     #Distplot(filter_times_novo, col_dist_jogador)
 
 with row3_1:
-    f'''### Gráfico de Contagem - Dados Antes ID {filtro_id}'''
+    f'''### Gráfico de Correlação - Dados Antes ID {filtro_id}'''
     CorrPlot(filter_times_antigo, cols_corr_time, data='time')
 with row3_2:
-    f'''### Gráfico de Contagem - Dados Após ID {filtro_id}'''
+    f'''### Gráfico de Correlação - Dados Após ID {filtro_id}'''
     CorrPlot(filter_times_novo, cols_corr_time, data='time')
 
 ## Sidebar -----------------------
@@ -331,9 +331,9 @@ with row5_2:
 
 ## Graficos de Correlação Jogadores -- Antes x Depois
 with row5_1:
-    f'''### Gráfico de Contagem - Dados Antes ID {filtro_id}'''
+    f'''### Gráfico de Correlação - Dados Antes ID {filtro_id}'''
     CorrPlot(filter_jogador_antigo, cols_corr_jogador)
 
 with row5_2:
-    f'''### Gráfico de Contagem - Dados Após ID {filtro_id}'''
+    f'''### Gráfico de Correlação - Dados Após ID {filtro_id}'''
     CorrPlot(filter_jogador_novo, cols_corr_jogador)
