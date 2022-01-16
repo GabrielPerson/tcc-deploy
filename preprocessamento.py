@@ -244,15 +244,16 @@ def Preproc():
 
     # Create composition scores for Agro, Tempo and Control Compositios
     base_agg = CompScore(base_agg).drop_duplicates()
+    base_agg = base_agg[base_agg.ACS > 100]
 
 
     base_agg[['Semi_Eco_5_10_WR', 'Semi_Buy_10_20_WR']] = base_agg[['Semi_Eco_5_10_WR', 'Semi_Buy_10_20_WR']].fillna(0)
     
     # Select and rename final columns
     features_keep_players = [
-    'Player', 'Agents','ACS', 'K','D','A',
+    'Player', 'Agents', 'Map', 'ACS', 'K','D','A',
     'KD_DIFF','ADR','HS%',
-    'FK','FD','FK_FD_DIFF', 'match_id', 'Map',
+    'FK','FD','FK_FD_DIFF', 'match_id', 
     'KPR','DPR','APR',
     'FKPR','FKWR','FDPR',
     '2K','3K','4K',
@@ -263,51 +264,49 @@ def Preproc():
     'CPR']
     base_geral = base_geral[features_keep_players]
     base_geral.columns = [
-    'Jogador', 'Agente', 'ACS', 
+    'Jogador', 'Agente', 'Mapa', 'ACS', 
     'Kills', 'Deaths', 'Assists',
     'Diferenca Kill/Death','ADR', 'HS%',
     'First Kills', 'First Deaths', 'Diferenca FK/FD',
-    'ID Partida', 'Mapa','Kills Por Round', 'Deaths Por Round','Assists Por Round',
+    'ID Partida', 'Kills Por Round', 'Deaths Por Round','Assists Por Round',
     'First Kill Por Round', 'Win Rate First Kills', 'First Death Por Round',
     'Double Kills', 'Triple Kills', 'Quadra Kills', 'Penta Kills',
     '1v1', '1v2', '1v3', '1v4', '1v5','Nota Economia', 'Plants', 'Defuses',
     'Total Mult Kills', 'Total Clutches', 'Clutches Por Round','Mult Kills Por Round']
 
     feat_keep_teams = [
-    'Team_x', 'match_id', 'Map', 'ACS', 
-    'K', 'D', 'A', 'KD_DIFF', 'ADR',
-    'HS%', 'ECON', 'FK', 'FD', 'KPR', 
-    'DPR', 'APR', 'FKPR', 'FDPR', '2K',
-    '3K', '4K', '5K', '1v1', '1v2', 
-    '1v3', '1v4', '1v5', 'PL', 'DE',
-    'total_mult_kill', 'MKPR', 'total_clutch', 'CPR', 'Opp_Team_x', 'rounds_won', 
-    'rounds_lost', 'ct_rounds_won', 'ct_rounds_lost','t_rounds_won', 't_rounds_lost', 
-    'Pistol_W', 'Pistol_P', 'Pistol_WR', 
-    'Eco_0_5_P', 'Eco_0_5_W', 'Eco_0_5_WR', 
-    'Semi_Eco_5_10_P', 'Semi_Eco_5_10_W', 'Semi_Eco_5_10_WR',
-    'Semi_Buy_10_20_P', 'Semi_Buy_10_20_W', 'Semi_Buy_10_20_WR',
-    'Full_Buy_20_P', 'Full_Buy_20_W', 'Full_Buy_20_WR',
-    'agro_score', 'tempo_score', 'control_score', 
-    'opp_agro_score', 'opp_tempo_score', 'opp_control_score', 'total_rounds', 'win_rate', 'ct_wr', 't_wr', 'RESULT']
-
+        'Team_x', 'Map', 'match_id',  'ACS', 
+        'K', 'D', 'A', 'KD_DIFF', 'ADR',
+        'HS%', 'ECON', 'FK', 'FD', 'KPR', 
+        'DPR', 'APR', 'FKPR', 'FDPR', '2K',
+        '3K', '4K', '5K', '1v1', '1v2', 
+        '1v3', '1v4', '1v5', 'PL', 'DE',
+        'total_mult_kill', 'MKPR', 'total_clutch', 'CPR', 'Opp_Team_x', 'rounds_won', 
+        'rounds_lost', 'ct_rounds_won', 'ct_rounds_lost','t_rounds_won', 't_rounds_lost', 
+        'Pistol_W', 'Pistol_P', 'Pistol_WR', 
+        'Eco_0_5_P', 'Eco_0_5_W', 'Eco_0_5_WR', 
+        'Semi_Eco_5_10_P', 'Semi_Eco_5_10_W', 'Semi_Eco_5_10_WR',
+        'Semi_Buy_10_20_P', 'Semi_Buy_10_20_W', 'Semi_Buy_10_20_WR',
+        'Full_Buy_20_P', 'Full_Buy_20_W', 'Full_Buy_20_WR',
+        'agro_score', 'tempo_score', 'control_score', 
+        'opp_agro_score', 'opp_tempo_score', 'opp_control_score', 'total_rounds', 'win_rate', 'ct_wr', 't_wr', 'RESULT']
     base_agg = base_agg[feat_keep_teams]
-
     base_agg.columns=[
-    'Time', 'ID Partida', 'Mapa', 'ACS', 
-    'Kills', 'Deaths', 'Assists','Diferenca Kill/Death', 'ADR', 
-    'HS%', 'Nota Economia','First Kills', 'First Deaths', 'Kills Por Round', 
-    'Deaths Por Round','Assists Por Round', 'First Kill Por Round', 'First Death Por Round','Double Kills', 
-    'Triple Kills', 'Quadra Kills', 'Penta Kills', '1v1', '1v2', 
-    '1v3', '1v4', '1v5', 'Plants', 'Defuses', 
-    'Total Mult Kills', 'Mult Kills Por Round', 'Total Clutches','Clutches Por Round', 'Time Oponente', 'Rounds Vencidos',
-    'Rounds Perdidos', 'Vitorias DEF', 'Derrotas DEF', 'Vitorias ATK', 'Derrotas ATK',
-    'Vitorias Pistol', 'Total Pistol', 'Win Rate Pistol',
-    'Total Eco', 'Vitorias Eco', 'Win Rate Eco',
-    'Total Semi Eco', 'Vitorias Semi Eco', 'Win Rate Semi Eco',
-    'Total Semi Buy', 'Vitorias Semi Buy', 'Win Rate Semi Buy',
-    'Total Full Buy', 'Vitorias Full Buy', 'Win Rate Full Buy',
-    'Score Comp Agro', 'Score Comp Tempo', 'Score Comp Control',
-    'Score Comp Agro Oponente', 'Score Comp Tempo Oponente','Score Comp Control Oponente', 'Rounds Totais', 'Win Rate', 'Win Rate DEF', 'Win Rate ATK', 'Resultado'] 
+        'Time', 'Mapa', 'ID Partida',  'ACS', 
+        'Kills', 'Deaths', 'Assists','Diferenca Kill/Death', 'ADR', 
+        'HS%', 'Nota Economia','First Kills', 'First Deaths', 'Kills Por Round', 
+        'Deaths Por Round','Assists Por Round', 'First Kill Por Round', 'First Death Por Round','Double Kills', 
+        'Triple Kills', 'Quadra Kills', 'Penta Kills', '1v1', '1v2', 
+        '1v3', '1v4', '1v5', 'Plants', 'Defuses', 
+        'Total Mult Kills', 'Mult Kills Por Round', 'Total Clutches','Clutches Por Round', 'Time Oponente', 'Rounds Vencidos',
+        'Rounds Perdidos', 'Vitorias DEF', 'Derrotas DEF', 'Vitorias ATK', 'Derrotas ATK',
+        'Vitorias Pistol', 'Total Pistol', 'Win Rate Pistol',
+        'Total Eco', 'Vitorias Eco', 'Win Rate Eco',
+        'Total Semi Eco', 'Vitorias Semi Eco', 'Win Rate Semi Eco',
+        'Total Semi Buy', 'Vitorias Semi Buy', 'Win Rate Semi Buy',
+        'Total Full Buy', 'Vitorias Full Buy', 'Win Rate Full Buy',
+        'Score Comp Agro', 'Score Comp Tempo', 'Score Comp Control',
+        'Score Comp Agro Oponente', 'Score Comp Tempo Oponente','Score Comp Control Oponente', 'Rounds Totais', 'Win Rate', 'Win Rate DEF', 'Win Rate ATK', 'Resultado'] 
 
     return base_geral, base_agg
 
