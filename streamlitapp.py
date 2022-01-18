@@ -162,7 +162,7 @@ def CorrPlot(df, cols, data='player'):
     
     plt.rcParams.update(rc)
 
-    ax = sns.heatmap(corr_spearman,  fmt="f", vmin=0, vmax=1, mask=mask, annot=True)
+    ax = sns.heatmap(corr_spearman,  fmt=".3f", vmin=0, vmax=1, mask=mask,  annot=True)
     st.pyplot(fig)
 
 def DownloadPlot(fig):
@@ -210,6 +210,7 @@ f'''# {TITLE} '''
 # MAPAS
 # "DATA" - POR MATCH_ID. EXPLICAR AS DATAS
  
+## Sidebar -----------------------
 st.sidebar.markdown(
 '''
 ## Filtros de Dados
@@ -227,7 +228,7 @@ filtro_agentes = st.sidebar.multiselect('Filtro de Agentes', AGENTES)
 filtro_mapas = st.sidebar.multiselect('Filtro de Mapas', MAPAS)
 filtro_id = st.sidebar.select_slider('Filtro de Partidas por ID',  options=df_times['ID Partida'].unique())
 
-## Sidebar -----------------------
+
 st.sidebar.markdown(''' --- 
 ## Filtros dos gráficos de Times ''')
 col_count_time = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Contagem - Times', options = df_times.select_dtypes(include=['object']).columns, index=1)
@@ -237,7 +238,6 @@ num_obj = st.sidebar.slider('Quantidade de valores do gráfico de Contagem - Tim
 
 st.sidebar.markdown(''' --- 
 ## Filtros dos gráficos de Jogadores ''')
-
 col_count_jogador = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Contagem - Jogadores', options = df_jogadores.select_dtypes(include=['object']).columns)
 col_dist_jogador = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Distribuição - Jogadores', options = df_jogadores.select_dtypes(exclude=['object']).columns)
 cols_corr_jogador = st.sidebar.multiselect('Seleciona as colunas para o gráfico de Correlação - Jogadores', options = df_jogadores.columns, default=['ACS', 'First Kill Por Round', 'First Death Por Round'])
@@ -249,14 +249,39 @@ cols_corr_jogador = st.sidebar.multiselect('Seleciona as colunas para o gráfico
 '''Uma breve amostra dos dados utilizados no desenvolvimento das análises e visuallizações disponíveis na interface. 
 Dados dos times são compostos por somas e médias dos dados dos jogadores deste para uma determinada partida.'''
 
+
+style_dict_times={'ACS':'{:.0f}',
+    'Kills':'{:.0f}', 'Deaths':'{:.0f}', 'Assists':'{:.0f}', 'Diferenca Kill/Death':'{:.0f}',
+    'ADR':'{:.2f}','HS%':'{:.0f}','Nota Economia':'{:.1f}','First Kills':'{:.0f}','First Deaths':'{:.0f}','Kills Por Round':'{:.2f}',
+    'Deaths Por Round':'{:.2f}','Assists Por Round':'{:.2f}','First Kill Por Round':'{:.2f}','First Death Por Round':'{:.2f}','Double Kills':'{:.0f}',
+    'Triple Kills':'{:.0f}','Quadra Kills':'{:.0f}','Penta Kills':'{:.0f}','1v1':'{:.0f}', '1v2':'{:.0f}', '1v3':'{:.0f}', '1v4':'{:.0f}', '1v5':'{:.0f}', 
+    'Plants':'{:.0f}','Defuses':'{:.0f}','Total Mult Kills':'{:.0f}','Mult Kills Por Round':'{:.2f}','Total Clutches':'{:.0f}','Clutches Por Round':'{:.2f}','Rounds Vencidos':'{:.0f}',
+    'Rounds Perdidos':'{:.0f}','Vitorias DEF':'{:.0f}', 'Derrotas DEF':'{:.0f}', 'Vitorias ATK':'{:.0f}', 'Derrotas ATK':'{:.0f}', 'Vitorias Pistol':'{:.0f}',
+    'Total Pistol':'{:.0f}','Win Rate Pistol':'{:.0f}','Total Eco':'{:.0f}','Vitorias Eco':'{:.0f}','Win Rate Eco':'{:.0f}',
+    'Total Semi Eco':'{:.0f}','Vitorias Semi Eco':'{:.0f}','Win Rate Semi Eco':'{:.0f}','Total Semi Buy':'{:.0f}','Vitorias Semi Buy':'{:.0f}',
+    'Win Rate Semi Buy':'{:.0f}','Total Full Buy':'{:.0f}','Vitorias Full Buy':'{:.0f}','Win Rate Full Buy':'{:.0f}','Score Comp Agro':'{:.0f}',
+    'Score Comp Tempo':'{:.0f}','Score Comp Control':'{:.0f}','Score Comp Agro Oponente':'{:.0f}','Score Comp Tempo Oponente':'{:.0f}',
+    'Score Comp Control Oponente':'{:.0f}', 'Rounds Totais':'{:.0f}', 'Win Rate':'{:.2f}', 'Win Rate DEF':'{:.2f}', 'Win Rate ATK':'{:.2f}'}
+
+style_dict_jogadores={'ACS':'{:.0f}',
+    'Kills':'{:.0f}', 'Deaths':'{:.0f}', 'Assists':'{:.0f}', 'Diferenca Kill/Death':'{:.0f}',
+    'ADR':'{:.2f}','HS%':'{:.0f}','Nota Economia':'{:.1f}','First Kills':'{:.0f}','First Deaths':'{:.0f}','Diferenca FK/FD':'{:.0f}','Kills Por Round':'{:.2f}','Deaths Por Round':'{:.2f}',
+    'Assists Por Round':'{:.2f}','First Kill Por Round':'{:.2f}','First Death Por Round':'{:.2f}','Double Kills':'{:.0f}','Win Rate First Kills':'{:.0f}',
+    'Triple Kills':'{:.0f}','Quadra Kills':'{:.0f}','Penta Kills':'{:.0f}','1v1':'{:.0f}', '1v2':'{:.0f}', '1v3':'{:.0f}', '1v4':'{:.0f}', '1v5':'{:.0f}', 
+    'Plants':'{:.0f}','Defuses':'{:.0f}','Total Mult Kills':'{:.0f}','Mult Kills Por Round':'{:.2f}','Total Clutches':'{:.0f}','Clutches Por Round':'{:.2f}'}
+
+#st.write(df_jogadores.select_dtypes(exclude=['object']).columns)
+#st.write(df_times.select_dtypes(exclude=['object']).columns)
+
 ''' ### Dados de Times '''
-st.write(df_times.sample(20, replace=True))
+st.dataframe(df_times.sample(20, replace=True).style.format(style_dict_times))
+#st.write(df_times.sample(20, replace=True))
 DownloadCSV(DfToCSV(df_times), 
             'Baixar Conjunto de Dados de Jogadores',
             'jogadores.csv')
 
 ''' ### Dados de Jogadores'''
-st.write(df_jogadores.sample(20,replace=True))
+st.write(df_jogadores.sample(20,replace=True).style.format(style_dict_jogadores))
 DownloadCSV(DfToCSV(df_jogadores), 
             'Baixar Conjunto de Dados de Times',
             'times.csv')
@@ -270,14 +295,14 @@ filter_times_antigo, filter_times_novo = FilterTimes(df_times, filtro_id, filtro
 with row2_1:
     f'''### Times - Antes ID {filtro_id}'''
     st.write(f'Total de Linhas - {filter_times_antigo.shape[0]}')
-    st.write(filter_times_antigo)
+    st.dataframe(filter_times_antigo.style.format(style_dict_times))
     DownloadCSV(DfToCSV(filter_times_antigo), 
                 'Baixar Dados Filtrados',
                 'times_filtrados_antesID.csv')
 with row2_2:
     f'''### Times - Depois ID {filtro_id}'''
     st.write(f'Total de Linhas - {filter_times_novo.shape[0]}')
-    st.write(filter_times_novo)
+    st.dataframe(filter_times_novo.style.format(style_dict_times))
     DownloadCSV(DfToCSV(filter_times_novo), 
                 'Baixar Dados Filtrados',
                 'times_filtrados_depoisID.csv')
@@ -286,7 +311,7 @@ with row2_2:
 ## Graficos de Contagem Times -- Antes x Depois
 '''
 ## Gráficos de Contagem - Times
-São utilizados para se comparar quantidades absolutas entre diferentes valores de um atributo. Por exemplo querendo-se comprara a quantidade de mapas disputados por um determinado time ou 
+São utilizados para se comparar quantidades absolutas entre diferentes valores de um atributo. Por exemplo querendo-se comparar a quantidade de mapas disputados por um determinado time ou 
 quantas vezes um determinado agente foi selecionado nas partidas em 2020. Aqui tem-se dados separados por partidas antes e depois de um determiado ID selecionado.
 '''
 
@@ -320,7 +345,6 @@ with row4_1:
 
     if dist_type_time == 'ECDF': ECDFPlot(filter_times_antigo, col_dist_time)
     else: Distplot(filter_times_antigo, col_dist_time)
-
 with row4_2:
     f'''### Dados Após ID {filtro_id}'''
     f'''Valor Mínimo - {filter_times_novo[col_dist_time].min()}'''
@@ -354,14 +378,14 @@ row5_1,  row5_2  = st.columns(2)
 with row5_1:
     f'''### Antes ID {filtro_id}'''
     st.write(f'Total de Linhas - {filter_jogador_antigo.shape[0]}')
-    st.write(filter_jogador_antigo)
+    st.dataframe(filter_jogador_antigo.style.format(style_dict_jogadores))
     DownloadCSV(DfToCSV(filter_jogador_antigo), 
                 'Baixar Dados Filtrados',
                 'jogadores_filtrados_antesID.csv')
 with row5_2:
     f'''### Depois ID {filtro_id}'''
     st.write(f'Total de Linhas - {filter_jogador_novo.shape[0]}')
-    st.write(filter_jogador_novo)
+    st.dataframe(filter_jogador_novo.style.format(style_dict_jogadores))
     DownloadCSV(DfToCSV(filter_jogador_novo), 
                 'Baixar Dados Filtrados',
                 'jogadores_filtrados_depoisID.csv')
@@ -384,19 +408,27 @@ dist_type_jogador = st.radio("", options=['ECDF', 'Histograma'])
 row7_1,  row7_2  = st.columns(2)
 with row7_1:
     f'''### Dados Antes ID {filtro_id}'''
-    f'''Valor Mínimo - {filter_jogador_antigo[col_dist_jogador].min()}'''
-    f'''Média - {round(filter_jogador_antigo[col_dist_jogador].mean(), 2)}'''
+    f'''{col_dist_jogador} Mínimo - {filter_jogador_antigo[col_dist_jogador].min()}
+        -- Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Jogador']}
+        -- Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Agente']}'''
+    f'''{col_dist_jogador} Médio - {round(filter_jogador_antigo[col_dist_jogador].mean(), 2)}'''
     f'''Mediana - {round(filter_jogador_antigo[col_dist_jogador].median(), 2)}'''
-    f'''Valor Máximo - {filter_jogador_antigo[col_dist_jogador].max()}'''
+    f'''Valor Máximo - {filter_jogador_antigo[col_dist_jogador].max()}
+        -- Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Jogador']}
+        -- Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Agente']}'''
 
     if dist_type_jogador == 'ECDF': ECDFPlot(filter_jogador_antigo, col_dist_jogador)
     else: Distplot(filter_jogador_antigo, col_dist_jogador)
 with row7_2:
     f'''### Dados Após ID {filtro_id}'''
-    f'''Valor Mínimo - {filter_jogador_novo[col_dist_jogador].min()}'''
-    f'''Média - {round(filter_jogador_novo[col_dist_jogador].mean(), 2)}'''
-    f'''Mediana - {round(filter_jogador_novo[col_dist_jogador].median(), 2)}'''
-    f'''Valor Máximo - {filter_jogador_novo[col_dist_jogador].max()}'''
+    f'''{col_dist_jogador} Mínimo - {filter_jogador_novo[col_dist_jogador].min()}
+        -- Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Jogador']}
+        -- Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Agente']}'''
+    f'''{col_dist_jogador} Médio - {round(filter_jogador_novo[col_dist_jogador].mean(), 2)}'''
+    f'''{col_dist_jogador} Mediano - {round(filter_jogador_novo[col_dist_jogador].median(), 2)}'''
+    f'''{col_dist_jogador} Máximo - {filter_jogador_novo[col_dist_jogador].max()}
+        -- Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Jogador']}
+        -- Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Agente']}'''
 
     if dist_type_jogador == 'ECDF': ECDFPlot(filter_jogador_novo, col_dist_jogador)
     else: Distplot(filter_jogador_novo, col_dist_jogador)
@@ -407,7 +439,6 @@ row8_1,  row8_2  = st.columns(2)
 with row8_1:
     f'''### Dados Antes ID {filtro_id}'''
     CorrPlot(filter_jogador_antigo, cols_corr_jogador)
-
 with row8_2:
     f'''### Dados Após ID {filtro_id}'''
     CorrPlot(filter_jogador_novo, cols_corr_jogador)
