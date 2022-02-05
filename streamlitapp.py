@@ -2,21 +2,15 @@
 FUNCIONALIDADES DA APLICAÇÃO
 
 - VISUALIAÇÕES
-    . correlações (seletor de váriaveis X e Y) --- DONE
-    . countplot -- DONE
-    . ECDF --- DONE
     . estatísticas (min, max, med, mean)
 
 - FILTROS
-    . filtro por data (match id) --- DONE
-    . agentes, times, mapas --- DONE
 
 - INTERAÇÕES
-    . download de tabelas -- DONE
     . download de gráficos -- DIFICIL
-    . acesso externo (via deploy github)
 
 '''
+from email.policy import default
 import streamlit as st
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
@@ -26,25 +20,57 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from preprocessamento import Preproc
 
+pd.options.display.float_format = '{:.2f}'.format
 
-def FilterJogadores(df, id, times, agentes, mapas):
+@st.cache
+def Format(df, style_dict):
+    return df.reset_index(drop=True).style.format(style_dict)
+
+def FilterJogadores(df, id, times, agentes, mapas, resultado):
 
     if len(times) > 0: df = df[df['Time'].isin(times)]
     if len(agentes) > 0: df = df[df['Agente'].isin(agentes)]
     if len(mapas) > 0: df = df[df['Mapa'].isin(mapas)]
+    if resultado != 'Ambos': df = df.loc[df.Resultado == resultado]
     df_antes = df[df['ID Partida'] <= id]
     df_depois = df[df['ID Partida'] >= id]
 
-    return df_antes, df_depois
+    return df_antes.reset_index(drop=True), df_depois.reset_index(drop=True)
 
-def FilterTimes(df, id, times, mapas):
+def FilterTimes(df, id, times, mapas, resultado):
 
     if len(times) > 0: df = df[df['Time'].isin(times)]
     if len(mapas) > 0: df = df[df['Mapa'].isin(mapas)]
+    if resultado != 'Ambos': df = df.loc[df.Resultado == resultado]
     df_antes = df[df['ID Partida'] <= id]
     df_depois = df[df['ID Partida'] >= id]
 
-    return df_antes, df_depois
+
+    return df_antes.reset_index(drop=True), df_depois.reset_index(drop=True)
+
+def ScatterPlot(df, col):
+
+    rc = {'figure.figsize':(8,4.5),
+          'axes.facecolor':'#0e1117',
+          'axes.edgecolor': '#0e1117',
+          'axes.labelcolor': 'white',
+          'figure.facecolor': '#0e1117',
+          'patch.edgecolor': '#0e1117',
+          'text.color': 'white',
+          'xtick.color': '#0e1117',
+          'ytick.color': 'white',
+          'grid.color': 'grey',
+          'font.size' : 9,
+          'axes.labelsize': 12,
+          'xtick.labelsize': 9,
+          'ytick.labelsize': 14}
+    plt.rcParams.update(rc)
+    fig, ax = plt.subplots()
+    ax = sns.scatterplot(x=df.index, y=df[col], color='#f94555')
+    #plt.xlabel('Valor')
+    plt.ylabel(col)
+    plt.title(f'Gráfico Dispersão de {col}')
+    st.pyplot(fig)
 
 def ECDFPlot(df, col):
 
@@ -66,7 +92,7 @@ def ECDFPlot(df, col):
     fig, ax = plt.subplots()
 
     ax = sns.ecdfplot(data=df, x=col, color='#f94555')
-    #plt.axvline(df[col].mean(), 0,1, color='white')
+    #plt.axvline(df[col].mean(), 0,0.5, color='white')
     plt.xlabel('Valor')
     plt.ylabel('Proporção')
     plt.title(f'Distribuição Cumulativa de {col}')
@@ -155,7 +181,7 @@ def CorrPlot(df, cols, data='player'):
           'xtick.color': 'white',
           'ytick.color': 'white',
           'grid.color': 'grey',
-          'font.size' : 9,
+          'font.size' : 14,
           'axes.labelsize': 12,
           'xtick.labelsize': 9,
           'ytick.labelsize': 14}
@@ -197,60 +223,61 @@ TIMES = df_times.Time.unique()
 AGENTES = df_jogadores.Agente.unique()
 MAPAS = df_times.Mapa.unique()
 ID_PARTIDA = df_times['ID Partida'].unique()
-TITLE = "INTERFACE WEB DE VISUALIZAÇÃO DE ESTATÍSTICAS DO CENÁRIO COMPETITIVO BRASILEIRO DE VALORANT"
+TITLE = "Interface Web de visualização de estatísticas do cenário competitivo brasileiro de VALORANT"
 
 st.set_page_config(page_title=TITLE,layout='wide')
-f'''# {TITLE} '''
+st.markdown(f'''# {TITLE}&#x2122''')
 
 '''---'''
 
 ##QUAIS FILTROS EU QUERO PARA OS DADOS
-# TIMES
-# AGENTES
-# MAPAS
-# "DATA" - POR MATCH_ID. EXPLICAR AS DATAS
- 
+
 ## Sidebar -----------------------
 st.sidebar.markdown(
-'''
-## Filtros de Dados
+''' ## Filtros de Dados
 
 Os filtros a seguir podem ser utilizados para selecionar Partidas, Mapas, Times, ou Agentes específicos para se gerar um conjunto
 de dados específico para uma análise mais direcionada. 
 
 Como não foi possível extrair a data exata de cada partida o "Match ID" é utilizado
 como filtro temporal, partidas no ano de 2020 possuem um ID menor que 7000.
+
+A página de uma partida de um determinado ID pode ser acessado através do link www.vlr.gg/<id partida> 
+
+(Ex: https://www.vlr.gg/10268)
 '''
 )
 
 filtro_times = st.sidebar.multiselect('Filtro de Times', TIMES)
-filtro_agentes = st.sidebar.multiselect('Filtro de Agentes', AGENTES)
+filtro_agentes = st.sidebar.multiselect('Filtro de Agentes - Somente dados Jogadores', AGENTES)
 filtro_mapas = st.sidebar.multiselect('Filtro de Mapas', MAPAS)
-filtro_id = st.sidebar.select_slider('Filtro de Partidas por ID',  options=df_times['ID Partida'].unique())
+filtro_result = st.sidebar.selectbox('Resultado', ['Vitoria', 'Derrota', 'Ambos'], index=2)
+filtro_id = st.sidebar.select_slider('Filtro de Partidas por ID',  options=df_times['ID Partida'].unique(), value=8228)
 
 
 st.sidebar.markdown(''' --- 
 ## Filtros dos gráficos de Times ''')
-col_count_time = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Contagem - Times', options = df_times.select_dtypes(include=['object']).columns, index=1)
+col_count_time = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Quantidade - Times', options = df_times.select_dtypes(include=['object']).columns, index=1)
 col_dist_time = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Distribuição - Times', options = df_times.select_dtypes(exclude=['object']).columns, index=1)
 cols_corr_time = st.sidebar.multiselect('Seleciona as colunas para o gráfico de Correlação - Times', options = df_times.columns, default=['Win Rate', 'Win Rate ATK', 'Win Rate DEF'])
-num_obj = st.sidebar.slider('Quantidade de valores do gráfico de Contagem - Times', min_value=1, max_value=20, value=20)
+num_obj = st.sidebar.slider('Quantidade de valores do gráfico de Quantidade - Times', min_value=1, max_value=20, value=20)
 
 st.sidebar.markdown(''' --- 
 ## Filtros dos gráficos de Jogadores ''')
-col_count_jogador = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Contagem - Jogadores', options = df_jogadores.select_dtypes(include=['object']).columns)
+col_count_jogador = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Quantidade - Jogadores', options = df_jogadores.select_dtypes(include=['object']).columns)
 col_dist_jogador = st.sidebar.selectbox('Selecione a coluna para apresentar no gráfico de Distribuição - Jogadores', options = df_jogadores.select_dtypes(exclude=['object']).columns)
 cols_corr_jogador = st.sidebar.multiselect('Seleciona as colunas para o gráfico de Correlação - Jogadores', options = df_jogadores.columns, default=['ACS', 'First Kill Por Round', 'First Death Por Round'])
 
 ## -------------------------------
 
-## Amostra das bases
+## Amostra das bases'
 '''## Amostras de Dados'''
 '''Uma breve amostra dos dados utilizados no desenvolvimento das análises e visuallizações disponíveis na interface. 
 Dados dos times são compostos por somas e médias dos dados dos jogadores deste para uma determinada partida.'''
 
 
-style_dict_times={'ACS':'{:.0f}',
+style_dict_times={
+    'ACS':'{:.0f}',
     'Kills':'{:.0f}', 'Deaths':'{:.0f}', 'Assists':'{:.0f}', 'Diferenca Kill/Death':'{:.0f}',
     'ADR':'{:.2f}','HS%':'{:.0f}','Nota Economia':'{:.1f}','First Kills':'{:.0f}','First Deaths':'{:.0f}','Kills Por Round':'{:.2f}',
     'Deaths Por Round':'{:.2f}','Assists Por Round':'{:.2f}','First Kill Por Round':'{:.2f}','First Death Por Round':'{:.2f}','Double Kills':'{:.0f}',
@@ -261,27 +288,28 @@ style_dict_times={'ACS':'{:.0f}',
     'Total Semi Eco':'{:.0f}','Vitorias Semi Eco':'{:.0f}','Win Rate Semi Eco':'{:.0f}','Total Semi Buy':'{:.0f}','Vitorias Semi Buy':'{:.0f}',
     'Win Rate Semi Buy':'{:.0f}','Total Full Buy':'{:.0f}','Vitorias Full Buy':'{:.0f}','Win Rate Full Buy':'{:.0f}','Score Comp Agro':'{:.0f}',
     'Score Comp Tempo':'{:.0f}','Score Comp Control':'{:.0f}','Score Comp Agro Oponente':'{:.0f}','Score Comp Tempo Oponente':'{:.0f}',
-    'Score Comp Control Oponente':'{:.0f}', 'Rounds Totais':'{:.0f}', 'Win Rate':'{:.2f}', 'Win Rate DEF':'{:.2f}', 'Win Rate ATK':'{:.2f}'}
+    'Score Comp Control Oponente':'{:.0f}', 'Rounds Totais':'{:.0f}', 'Win Rate':'{:.2f}', 'Win Rate DEF':'{:.2f}', 'Win Rate ATK':'{:.2f}'
+}
 
-style_dict_jogadores={'ACS':'{:.0f}',
+style_dict_jogadores={
+    'ACS':'{:.0f}',
     'Kills':'{:.0f}', 'Deaths':'{:.0f}', 'Assists':'{:.0f}', 'Diferenca Kill/Death':'{:.0f}',
     'ADR':'{:.2f}','HS%':'{:.0f}','Nota Economia':'{:.1f}','First Kills':'{:.0f}','First Deaths':'{:.0f}','Diferenca FK/FD':'{:.0f}','Kills Por Round':'{:.2f}','Deaths Por Round':'{:.2f}',
     'Assists Por Round':'{:.2f}','First Kill Por Round':'{:.2f}','First Death Por Round':'{:.2f}','Double Kills':'{:.0f}','Win Rate First Kills':'{:.0f}',
     'Triple Kills':'{:.0f}','Quadra Kills':'{:.0f}','Penta Kills':'{:.0f}','1v1':'{:.0f}', '1v2':'{:.0f}', '1v3':'{:.0f}', '1v4':'{:.0f}', '1v5':'{:.0f}', 
-    'Plants':'{:.0f}','Defuses':'{:.0f}','Total Mult Kills':'{:.0f}','Mult Kills Por Round':'{:.2f}','Total Clutches':'{:.0f}','Clutches Por Round':'{:.2f}'}
-
-#st.write(df_jogadores.select_dtypes(exclude=['object']).columns)
-#st.write(df_times.select_dtypes(exclude=['object']).columns)
+    'Plants':'{:.0f}','Defuses':'{:.0f}','Total Mult Kills':'{:.0f}','Mult Kills Por Round':'{:.2f}','Total Clutches':'{:.0f}','Clutches Por Round':'{:.2f}'
+}
 
 ''' ### Dados de Times '''
-st.dataframe(df_times.sample(20, replace=True).style.format(style_dict_times))
+st.dataframe(Format(df_times.sample(20, replace=True), style_dict_times))
 #st.write(df_times.sample(20, replace=True))
 DownloadCSV(DfToCSV(df_times), 
             'Baixar Conjunto de Dados de Jogadores',
             'jogadores.csv')
 
 ''' ### Dados de Jogadores'''
-st.write(df_jogadores.sample(20,replace=True).style.format(style_dict_jogadores))
+#st.dataframe(df_jogadores.sample(20, replace=True))
+st.dataframe(Format(df_jogadores.sample(20, replace=True), style_dict_jogadores))
 DownloadCSV(DfToCSV(df_jogadores), 
             'Baixar Conjunto de Dados de Times',
             'times.csv')
@@ -289,9 +317,18 @@ DownloadCSV(DfToCSV(df_jogadores),
 st.markdown('''---''')
 
 ## Dados Times Filtrados
-'''## Dados Filtrados Times'''
+'''## Dados Filtrados Times
+
+As tabelas a seguir são amostras filtradas da base original de acordo com os valores escolhidos na barra lateral e são utilizdas na criação dos gráficos abaixo.
+
+Podem ser baixadas em formato *csv* através do botão "**Baixar Dados Filtrados**"
+'''
+
 row2_1, row2_2 = st.columns(2)
-filter_times_antigo, filter_times_novo = FilterTimes(df_times, filtro_id, filtro_times, filtro_mapas)
+filter_times_antigo, filter_times_novo = FilterTimes(df_times, filtro_id, filtro_times, filtro_mapas, filtro_result)
+#vitorias_filtrado_antigo = filter_times_antigo[filter_times_antigo.Resultado == 'Vitoria']
+#vitorias_filtrado_novo  = filter_times_novo[filter_times_novo.Resultado == 'Vitoria']
+
 with row2_1:
     f'''### Times - Antes ID {filtro_id}'''
     st.write(f'Total de Linhas - {filter_times_antigo.shape[0]}')
@@ -310,7 +347,7 @@ with row2_2:
 
 ## Graficos de Contagem Times -- Antes x Depois
 '''
-## Gráficos de Contagem - Times
+## Gráficos de Quantidade - Times
 São utilizados para se comparar quantidades absolutas entre diferentes valores de um atributo. Por exemplo querendo-se comparar a quantidade de mapas disputados por um determinado time ou 
 quantas vezes um determinado agente foi selecionado nas partidas em 2020. Aqui tem-se dados separados por partidas antes e depois de um determiado ID selecionado.
 '''
@@ -329,36 +366,50 @@ with row3_2:
 Utilizados para se observar como um conjunto de valores está disitrbuido ao longo de um intervalo, sendo possível identificar intervalos de maior concetração
 de observaçoes e em quais intervalos existem observaçoes menos frequentes.
 
-Dentre as opções disponíveis - ECDF e Histograma - tem-se o gráfico de distribuição cumulativa 
+Dentre as opções disponíveis - ECDF, Histograma e Dispersão - tem-se o gráfico de distribuição cumulativa 
 ([ECDF](https://towardsdatascience.com/what-why-and-how-to-read-empirical-cdf-123e2b922480 "ECDF - Towards Data Sciente")) 
-para se observar para qual valor X temos até Y das observaços da amostra
-e o Histograma, apresentando faixas de agrupamentos de valores onde quanto maior a faixa mais valores temos dentro desta.
+para se observar para qual valor X temos até Y das observaços da amostra, 
+o Histograma, apresentando faixas de agrupamentos de valores onde quanto maior a faixa mais valores temos dentro desta
+e o gráfico de dispersão (_Scatterplot_) que apresenta como os pontos de dados se distribuem no espaço.
+
+Juntamente aos gráficos tem-se também métricas importantes sobre o atributo analisado, como valor mínimo, média, mediana e máximo, assim como qual time
+obteve os respectivos valores extremos e em qual mapa isso ocorreu.
 '''
-dist_type_time = st.radio("ECDF ou Histograma", options=['ECDF', 'Histograma'])
+dist_type_time = st.radio("", options=['ECDF - Ditribuição Cumulativa', 'Histograma'])
 row4_1, row4_2  = st.columns(2)
 with row4_1:
     f'''### Dados Antes ID {filtro_id}'''
-    f'''Valor Mínimo - {filter_times_antigo[col_dist_time].min()}'''
-    f'''Média - {round(filter_times_antigo[col_dist_time].mean(), 2)}'''
-    f'''Mediana - {round(filter_times_antigo[col_dist_time].median(), 2)}'''
-    f'''Valor Máximo - {filter_times_antigo[col_dist_time].max()}'''
+    f'''{col_dist_time} Mínimo — {filter_times_antigo[col_dist_time].min()}
+        — Time: {filter_times_antigo.at[filter_times_antigo[col_dist_time].idxmin(), 'Time']}
+        — Mapa: {filter_times_antigo.at[filter_times_antigo[col_dist_time].idxmin(), 'Mapa']}'''
+    f'''{col_dist_time} Médio — {round(filter_times_antigo[col_dist_time].mean(), 2)}'''
+    f'''Mediana — {round(filter_times_antigo[col_dist_time].median(), 2)}'''
+    f'''{col_dist_time} Máximo — {filter_times_antigo[col_dist_time].max()}
+        — Time: {filter_times_antigo.at[filter_times_antigo[col_dist_time].idxmax(), 'Time']}
+        — Mapa: {filter_times_antigo.at[filter_times_antigo[col_dist_time].idxmax(), 'Mapa']}'''
 
-    if dist_type_time == 'ECDF': ECDFPlot(filter_times_antigo, col_dist_time)
+    if dist_type_time == 'ECDF - Ditribuição Cumulativa': ECDFPlot(filter_times_antigo, col_dist_time)
     else: Distplot(filter_times_antigo, col_dist_time)
+    ScatterPlot(filter_times_antigo, col_dist_time)
 with row4_2:
     f'''### Dados Após ID {filtro_id}'''
-    f'''Valor Mínimo - {filter_times_novo[col_dist_time].min()}'''
-    f'''Média - {round(filter_times_novo[col_dist_time].mean(), 2)}'''
-    f'''Mediana - {round(filter_times_novo[col_dist_time].median(), 2)}'''
-    f'''Valor Máximo - {filter_times_novo[col_dist_time].max()}'''
+    f'''{col_dist_time} Mínimo — {filter_times_novo[col_dist_time].min()}
+        — Time: {filter_times_novo.at[filter_times_novo[col_dist_time].idxmin(), 'Time']}
+        — Mapa: {filter_times_novo.at[filter_times_novo[col_dist_time].idxmin(), 'Mapa']}'''
+    f'''{col_dist_time} Médio — {round(filter_times_novo[col_dist_time].mean(), 2)}'''
+    f'''Mediana — {round(filter_times_novo[col_dist_time].median(), 2)}'''
+    f'''{col_dist_time} Máximo — {filter_times_novo[col_dist_time].max()}
+        — Time: {filter_times_novo.at[filter_times_novo[col_dist_time].idxmax(), 'Time']}
+        — Mapa: {filter_times_novo.at[filter_times_novo[col_dist_time].idxmax(), 'Mapa']}'''
 
-    if dist_type_time == 'ECDF': ECDFPlot(filter_times_novo, col_dist_time)
+    if dist_type_time == 'ECDF - Ditribuição Cumulativa': ECDFPlot(filter_times_novo, col_dist_time)
     else: Distplot(filter_times_novo, col_dist_time)
+    ScatterPlot(filter_times_novo, col_dist_time)
 
 '''
-## Gráficos de Correlação
+## Gráficos de Correlação - Times
 
-Utilizados para apresentar o cálulo da correlação linear de [Spearman](https://towardsdatascience.com/clearly-explained-pearson-v-s-spearman-correlation-coefficient-ada2f473b8 "Correlação de Spearman - Towards Data Science"),
+Utilizados para apresentar o cálulo da correlação linear de [Pearson](https://towardsdatascience.com/clearly-explained-pearson-v-s-spearman-correlation-coefficient-ada2f473b8 "Correlação de Spearman - Towards Data Science"),
 que representa quão relacionado são os valores entre duas variáveis numéricas contínuas. Quanto mais próximo de -1 ou 1 os cálculos, maior é esse relação, negativa ou positiva respectivamente.
 '''
 row5_1, row5_2  = st.columns(2)
@@ -370,10 +421,15 @@ with row5_2:
     CorrPlot(filter_times_novo, cols_corr_time, data='time')
 
 st.markdown('''---''')
-filter_jogador_antigo, filter_jogador_novo = FilterJogadores(df_jogadores, filtro_id, filtro_times, filtro_agentes, filtro_mapas)
+filter_jogador_antigo, filter_jogador_novo = FilterJogadores(df_jogadores, filtro_id, filtro_times, filtro_agentes, filtro_mapas, filtro_result)
 
 ## Dados Jogadores Filtrados
-'''## Dados Filtrados Jogadores'''
+'''## Dados Filtrados Jogadores
+
+As tabelas a seguir são amostras filtradas da base original de acordo com os valores escolhidos na barra lateral e são utilizdas na criação dos gráficos abaixo.
+
+Podem ser baixadas em formato *csv* através do botão "**Baixar Dados Filtrados**"
+'''
 row5_1,  row5_2  = st.columns(2)
 with row5_1:
     f'''### Antes ID {filtro_id}'''
@@ -391,7 +447,7 @@ with row5_2:
                 'jogadores_filtrados_depoisID.csv')
 
 
-'''## Gráficos de Contagem - Jogadores'''
+'''## Gráficos de Quantidade - Jogadores'''
 row6_1,  row6_2  = st.columns(2)
 ## Graficos de Contagem Times -- Antes x Depois
 with row6_1:
@@ -403,38 +459,49 @@ with row6_2:
 
 
 ## Graficos de Contagem Jogadores -- Antes x Depois
-'''## Gráficos de Distribuição - Jogadores'''
+'''## Gráficos de Distribuição - Jogadores
+
+Os gráficos de dispersão dos dados de jogadores seguem a mesma lógica dos gráficos dos dados de times, porém apresentando visualizações e métricas
+de estatísticas individuais, assim como quais jogadores com quais agentes obtiveram valores extremos.
+'''
 dist_type_jogador = st.radio("", options=['ECDF', 'Histograma'])
 row7_1,  row7_2  = st.columns(2)
 with row7_1:
     f'''### Dados Antes ID {filtro_id}'''
-    f'''{col_dist_jogador} Mínimo - {filter_jogador_antigo[col_dist_jogador].min()}
-        -- Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Jogador']}
-        -- Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Agente']}'''
-    f'''{col_dist_jogador} Médio - {round(filter_jogador_antigo[col_dist_jogador].mean(), 2)}'''
+    f'''{col_dist_jogador} Mínimo — {filter_jogador_antigo[col_dist_jogador].min()}
+        — Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Jogador']}
+        — Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmin(), 'Agente']}'''
+    f'''{col_dist_jogador} Médio — {round(filter_jogador_antigo[col_dist_jogador].mean(), 2)}'''
     f'''Mediana - {round(filter_jogador_antigo[col_dist_jogador].median(), 2)}'''
-    f'''Valor Máximo - {filter_jogador_antigo[col_dist_jogador].max()}
-        -- Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Jogador']}
-        -- Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Agente']}'''
+    f'''{col_dist_jogador} Máximo — {filter_jogador_antigo[col_dist_jogador].max()}
+        — Jogador: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Jogador']}
+        — Agente: {filter_jogador_antigo.at[filter_jogador_antigo[col_dist_jogador].idxmax(), 'Agente']}'''
 
     if dist_type_jogador == 'ECDF': ECDFPlot(filter_jogador_antigo, col_dist_jogador)
     else: Distplot(filter_jogador_antigo, col_dist_jogador)
+    ScatterPlot(filter_jogador_antigo, col_dist_jogador)
+
 with row7_2:
     f'''### Dados Após ID {filtro_id}'''
-    f'''{col_dist_jogador} Mínimo - {filter_jogador_novo[col_dist_jogador].min()}
-        -- Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Jogador']}
-        -- Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Agente']}'''
-    f'''{col_dist_jogador} Médio - {round(filter_jogador_novo[col_dist_jogador].mean(), 2)}'''
-    f'''{col_dist_jogador} Mediano - {round(filter_jogador_novo[col_dist_jogador].median(), 2)}'''
-    f'''{col_dist_jogador} Máximo - {filter_jogador_novo[col_dist_jogador].max()}
-        -- Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Jogador']}
-        -- Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Agente']}'''
+    f'''{col_dist_jogador} Mínimo — {filter_jogador_novo[col_dist_jogador].min()}
+        — Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Jogador']}
+        — Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmin(), 'Agente']}'''
+    f'''{col_dist_jogador} Médio — {round(filter_jogador_novo[col_dist_jogador].mean(), 2)}'''
+    f'''Mediana - {round(filter_jogador_novo[col_dist_jogador].median(), 2)}'''
+    f'''{col_dist_jogador} Máximo — {filter_jogador_novo[col_dist_jogador].max()}
+        — Jogador: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Jogador']}
+        — Agente: {filter_jogador_novo.at[filter_jogador_novo[col_dist_jogador].idxmax(), 'Agente']}'''
 
     if dist_type_jogador == 'ECDF': ECDFPlot(filter_jogador_novo, col_dist_jogador)
     else: Distplot(filter_jogador_novo, col_dist_jogador)
+    ScatterPlot(filter_jogador_novo, col_dist_jogador)
 
 ## Graficos de Correlação Jogadores -- Antes x Depois
-'''## Gráficos de Correlação - Jogadores'''
+'''## Gráficos de Correlação - Jogadores
+
+Os gráficos de correlação dos dados de jogadores seguem a mesma lógica dos gráficos dos dados de times, porém apresentado os valores do teste de correlação
+de Pearson entre as estaísticas individuais dos jogadores e como elas se correlacionam.
+'''
 row8_1,  row8_2  = st.columns(2)
 with row8_1:
     f'''### Dados Antes ID {filtro_id}'''

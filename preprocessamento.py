@@ -251,7 +251,7 @@ def Preproc():
     
     # Select and rename final columns
     features_keep_players = [
-    'Player', 'Agents', 'Map', 'ACS', 'K','D','A',
+    'Player', 'Agents', 'Map', 'Team_x', 'ACS', 'K','D','A',
     'KD_DIFF','ADR','HS%',
     'FK','FD','FK_FD_DIFF', 'match_id', 
     'KPR','DPR','APR',
@@ -264,7 +264,7 @@ def Preproc():
     'CPR']
     base_geral = base_geral[features_keep_players]
     base_geral.columns = [
-    'Jogador', 'Agente', 'Mapa', 'ACS', 
+    'Jogador', 'Agente', 'Mapa', 'Time', 'ACS', 
     'Kills', 'Deaths', 'Assists',
     'Diferenca Kill/Death','ADR', 'HS%',
     'First Kills', 'First Deaths', 'Diferenca FK/FD',
