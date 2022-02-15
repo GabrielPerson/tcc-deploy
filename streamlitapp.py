@@ -226,7 +226,7 @@ ID_PARTIDA = df_times['ID Partida'].unique()
 TITLE = "Interface Web de visualização de estatísticas do cenário competitivo brasileiro de VALORANT"
 
 st.set_page_config(page_title="Interface Web - VALORANT",layout='wide')
-st.markdown('''# Interface Web de visualização de estatísticas do cenário competitivo brasileiro de VALORANT&#x2122''')
+st.markdown('''# Interface Web de visualização de estatísticas do cenário competitivo brasileiro de VALORANT''')
 
 with st.expander("Introdução"):
     '''
