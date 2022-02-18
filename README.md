@@ -9,7 +9,7 @@ Diretórios contendo os dados de _Overview, Performance e Economy_ dos times cor
 
 ## Documentos e Imagens
 
-A pasta ![docs](/docs/) contém o relatório da primeira parte deste trabalho de graduação - contendo as principais análises descritivas e estatísticas desenvolvidas que serviram de apoio para o desenvolvimento da interface - e o relátorio final de entrega para a conclusão do trabalho de graduação. A pasta ![imgs](/img/) contém imagens que exemplificam como os dados extraídos estão dispostos localmente na estrutura de diretórios e uma amostra da disposição dos dados de uma determinada partida no website [vlr.gg](www.vlr.gg).
+A pasta [docs](https://github.com/GabrielPerson/tcc-deploy/tree/main/docs) contém o relatório da primeira parte deste trabalho de graduação - contendo as principais análises descritivas e estatísticas desenvolvidas que serviram de apoio para o desenvolvimento da interface - e o relátorio final de entrega para a conclusão do trabalho de graduação. A pasta [imgs](https://github.com/GabrielPerson/tcc-deploy/tree/main/img) contém imagens que exemplificam como os dados extraídos estão dispostos localmente na estrutura de diretórios e uma amostra da disposição dos dados de uma determinada partida no website [vlr.gg](https://www.vlr.gg).
 
 ## Código Fonte
 
